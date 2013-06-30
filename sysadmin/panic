@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Figure out what bold and regular text look like
+bold=`tput bold`
+normal=`tput sgr0`
+
+echo "[${bold}PANIC${normal}] Killing all lighttpd and php-fpm processes on server"
+/usr/bin/sudo killall -9 lighttpd php-fpm
+

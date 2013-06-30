@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Figure out what bold and regular text look like
+bold=`tput bold`
+normal=`tput sgr0`
+
+if [ "$(pidof unrealircd)" ]
+then         
+  # UnrealIRCd is running
+  echo "[${bold}UNREALIRCD${normal}] UnrealIRCd is running"
+
+  # Check if Anope is running
+  if [ "$(pidof services)" ]
+  then
+    # AnopeIRC is running
+    echo "[${bold}ANOPEIRC${normal}] Services are already running"
+  # Exit script
+  exit
+  else
+  # AnopeIRC is not running, start it
+    echo "[${bold}ANOPEIRC${normal}] Starting services"
+    /usr/bin/sudo -u kel /home/kel/services/anoperc start
+  fi
+else                                   
+  # UnrealIRCd is not running
+  echo "[${bold}UNREALIRCD${normal}] IRC daemon is not running"
+
+  # Start UnrealIRCd
+  /usr/bin/sudo /etc/init.d/unrealircd start
+
+  # Check if UnrealIRCd is running now  
+  if [ "$(pidof unrealircd)" ]
+  then
+    # Check if Anope is running (it shouldn't at this point)
+    if [ "$(pidof services)" ]
+    then
+    # This is weird - we just started UnrealIRCd, so services should definitely not be online
+      echo "[${bold}ANOPEIRC${normal}] Services are already running - restarting to be sure"
+      # Kill AnopeIRC services
+      /usr/bin/sudo killall -9 services
+      # Start AnopeIRC services
+      /usr/bin/sudo -u kel /home/kel/services/anoperc restart
+    else
+    # AnopeIRC is not running, as expected, so we start it
+      echo "[${bold}ANOPEIRC${normal}] Starting services"
+      /usr/bin/sudo -u kel /home/kel/services/anoperc restart
+    fi
+  else
+  # Something went really wrong - even restarting the IRCd failed
+    echo "[${bold}UNREALIRCD${normal}] IRC server is still not running - exiting!"
+    exit
+  fi
+fi
+
+echo "[--] Script finished succesfully"

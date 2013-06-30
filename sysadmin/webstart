@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Figure out what bold and regular text look like
+bold=`tput bold`
+normal=`tput sgr0`
+
+# Start up PHP backend
+echo "[${bold}PHP-FPM${normal}] Starting PHP backend"
+/usr/bin/sudo /etc/init.d/php-fpm restart
+
+# Count number of backend servers active
+ALIVE=" $(ps -o pid= -C php-fpm | tr -s '[[:space:][:cntrl:]]' ' ') "
+for PID in $ALIVE ; do
+    RUNNING[${#RUNNING[@]}]=$PID
+done
+
+# Output number of running processes
+echo "[${bold}PHP-FPM${normal}] There are ${#RUNNING[@]} PHP-FPM processes running"
+
+# Start up webserver
+echo "[${bold}LIGHTTPD${normal}] Starting webserver"
+/usr/bin/sudo /etc/init.d/lighttpd restart

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Figure out what bold and regular text look like
+bold=`tput bold`
+normal=`tput sgr0`
+
+echo "[${bold}LIGHTTPD${normal}] Stopping webserver"
+/usr/bin/sudo /etc/init.d/lighttpd stop
+echo "[${bold}PHP-FPM${normal}] Stopping PHP backend"
+/usr/bin/sudo /etc/init.d/php-fpm stop

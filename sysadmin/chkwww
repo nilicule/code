@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+#
+# chkwww v0.1
+# http://brink.st/config/files/perl/chkwww.pl
+#
+# chkwww does little more than showing you the webserver version
+# of the remote server.
+#
+# Copyright (C) 2007 Remco B. Brink <remco@rc6.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# The GNU General Public License is available at:
+# http://www.gnu.org/copyleft/gpl.html
+
+# Create a user agent object
+use LWP::UserAgent;
+
+$ua = LWP::UserAgent->new;
+$ua->agent("chkwww/0.1 ");
+
+# Create a request
+my $server = $ARGV[0];
+
+# Make sure we build a valid request
+if ($server  =~ m/^http\:\/\//) {
+   # http is passed on the commandline
+} else {
+   $realserver = "http://" . $server;
+}
+
+# Do a HEAD request
+my $req = HTTP::Request->new(HEAD => $realserver);
+
+# Pass request to the user agent and get a response back
+my $res = $ua->request($req);
+
+# Check the outcome of the response
+if ($res->is_success) {
+  # Output results to user
+  print $server . ": " . $res->header('server') . "\n";
+} else {
+  # Something went wonky
+  print $res->status_line, "\n";
+}
