@@ -4,7 +4,7 @@
 #
 # Requirements: sed, curl
 #
-# Copyright 2011 Remco Brink <remco@rc6.org>
+# Copyright 2013 Remco Brink <remco@rc6.org>
 
 VERSION=1.0
 DEFAULTCONFIG=sc_serv.conf.nilicule
