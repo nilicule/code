@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Script for starting Shoutcast with a custom broadcast password.
+#
+# Requirements: sed, curl
+#
+# Copyright 2011 Remco Brink <remco@rc6.org>
+
+VERSION=1.0
+DEFAULTCONFIG=sc_serv.conf.nilicule
+
+echo
+echo " - CLI Shoutcast server starter v$VERSION by nilicule"
+
+if [ ! -f sc_serv ]; then
+  echo " - ERROR: sc_serv executable not found, please run this script from your Shoutcast directory"
+  echo
+  exit;
+fi
+
+if [ $1 ]; then
+  echo " - Creating a new configuration file"
+  if [ ! -f sc_serv.conf.template ]; then
+    echo " - No sc_serv.conf.template found, checking for default sc_serv.conf"
+    if [ ! -f sc_serv.conf ]; then
+      echo " - No default sc_serv.conf found either, grabbing one for you from the web"
+      curl -s -O http://rc.vc/files/shoutcast/sc_serv.conf.template
+    else
+      echo " - Copying sc_serv.conf to sc_serv.conf.template"
+      cp sc_serv.conf sc_serv.conf.template
+    fi
+  fi 
+  echo " - Setting broadcast password to '$1'"
+  sed -e s/^Password=.*/Password="$1"/g sc_serv.conf.template > sc_serv.conf.tmp
+  echo " - Starting Shoutcast server"
+  echo
+  ./sc_serv sc_serv.conf.tmp
+  echo " - Done broadcast, cleaning up..."
+  rm sc_serv.conf.tmp
+else
+  echo " - No password specified, using default file '$DEFAULTCONFIG'"
+  if [ ! -f $DEFAULTCONFIG ]; then
+    echo " - Default config file missing, grabbing a new one for you"
+    curl -s -o $DEFAULTCONFIG http://rc.vc/files/shoutcast/sc_serv.conf.template
+    echo " - Your broadcast password is 'broadcastpassword'"
+    echo " - Your administrator password is 'adminpassword'"
+  fi
+  echo " - Starting Shoutcast server"
+  echo
+  ./sc_serv $DEFAULTCONFIG
+fi
+
+# Time to call it quits
+echo "Bye!"
+echo
