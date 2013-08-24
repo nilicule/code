@@ -1,9 +1,9 @@
 #
 # Requirements: sed, curl
 #
-# Copyright 2013 Remco Brink <remco@rc6.org>
+# Copyright 2011 Remco Brink <remco@rc6.org>
 
-VERSION=1.1
+VERSION=1.0
 DEFAULTCONFIG=sc_serv.conf.nilicule
 
 echo
@@ -16,15 +16,15 @@ if [ ! -f sc_serv ]; then
 fi
 
 if [ $1 ]; then
-  # First parameter is password    
   password=$1
-  shift
-    
+
   # If a second parameter is set, that will be the port
-  if [[ $1 = *[[:digit:]]* ]]; then
-  port=$1
-  else
-  port=8000
+  if [ $2 ]; then
+    if [[ $2 = *[[:digit:]]* ]]; then
+      port=$2
+    fi
+  else 
+    port=8000
   fi
 
   echo " - Creating a new configuration file"
@@ -39,9 +39,10 @@ if [ $1 ]; then
     fi
   fi 
   echo " - Setting broadcast password to '$password'"
-  sed -e s/^Password=.*/Password="$password"/g sc_serv.conf.template > sc_serv.conf.tmp
+  sed -e s/^Password=.*/Password="$password"/g sc_serv.conf.template > sc_serv.conf.temp1
   echo " - Setting broadcast port to '$port'"
-  sed -e s/^PortBase=.*/PortBase="$port"/g sc_serv.conf.template > sc_serv.conf.tmp
+  sed -e s/^PortBase=.*/PortBase="$port"/g sc_serv.conf.temp1 > sc_serv.conf.tmp
+  rm sc_serv.conf.temp1
   echo " - Starting Shoutcast server"
   echo
   ./sc_serv sc_serv.conf.tmp
@@ -60,6 +61,3 @@ else
   ./sc_serv $DEFAULTCONFIG
 fi
 
-# Time to call it quits
-echo "Bye!"
-echo
