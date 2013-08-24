@@ -60,3 +60,6 @@ else
   ./sc_serv $DEFAULTCONFIG
 fi
 
+# Time to call it quits
+echo "Bye!"
+echo
