@@ -1,10 +1,7 @@
-#!/bin/bash
-
-# Script for starting Shoutcast with a custom broadcast password.
 #
 # Requirements: sed, curl
 #
-# Copyright 2013 Remco Brink <remco@rc6.org>
+# Copyright 2011 Remco Brink <remco@rc6.org>
 
 VERSION=1.0
 DEFAULTCONFIG=sc_serv.conf.nilicule
@@ -19,6 +16,17 @@ if [ ! -f sc_serv ]; then
 fi
 
 if [ $1 ]; then
+  # First parameter is password    
+  password=$1
+  shift
+    
+  # If a second parameter is set, that will be the port
+  if [[ $1 = *[[:digit:]]* ]]; then
+  port=$1
+  else
+  port=8000
+  fi
+
   echo " - Creating a new configuration file"
   if [ ! -f sc_serv.conf.template ]; then
     echo " - No sc_serv.conf.template found, checking for default sc_serv.conf"
@@ -30,8 +38,10 @@ if [ $1 ]; then
       cp sc_serv.conf sc_serv.conf.template
     fi
   fi 
-  echo " - Setting broadcast password to '$1'"
-  sed -e s/^Password=.*/Password="$1"/g sc_serv.conf.template > sc_serv.conf.tmp
+  echo " - Setting broadcast password to '$password'"
+  sed -e s/^Password=.*/Password="$password"/g sc_serv.conf.template > sc_serv.conf.tmp
+  echo " - Setting broadcast port to '$port'"
+  sed -e s/^PortBase=.*/PortBase="$port"/g sc_serv.conf.template > sc_serv.conf.tmp
   echo " - Starting Shoutcast server"
   echo
   ./sc_serv sc_serv.conf.tmp
@@ -50,6 +60,3 @@ else
   ./sc_serv $DEFAULTCONFIG
 fi
 
-# Time to call it quits
-echo "Bye!"
-echo
