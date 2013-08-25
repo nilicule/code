@@ -1,13 +1,19 @@
+#!/bin/bash
 #
 # Requirements: sed, curl
 #
 # Copyright 2011 Remco Brink <remco@rc6.org>
 
+# Script variables
 VERSION=1.0
 DEFAULTCONFIG=sc_serv.conf.nilicule
 
+# Script defaults
+port=8000
+
 echo
-echo " - CLI Shoutcast server starter v$VERSION by nilicule"
+echo "CLI Shoutcast server starter v$VERSION by nilicule"
+echo
 
 if [ ! -f sc_serv ]; then
   echo " - ERROR: sc_serv executable not found, please run this script from your Shoutcast directory"
@@ -15,18 +21,41 @@ if [ ! -f sc_serv ]; then
   exit;
 fi
 
+function usage
+{
+  echo "Usage:"
+  echo "  $0"
+  echo "     Starts Shoutcast using the default sc_serv.conf file"
+  echo
+  echo "  $0 <password>"
+  echo "     Starts a Shoutcast instance with broadcast password set to <password>"
+  echo
+  echo "  $0 <password> <port>"
+  echo "     Starts a Shoutcast instance with broadcast password set to <password> on port <port>"
+  echo
+  echo "This script expects a Shoutcast binary in the current directory. If no configuration can"
+  echo "be found, the program will retrieve a default configuration from the web."
+  echo
+  exit
+}
+
 if [ $1 ]; then
+  # Check if the user was just looking for help
+  case $1 in
+      -h | --help )           usage
+                              exit
+                              ;;
+  esac
+  
+  # First parameter is always the password
   password=$1
 
-  # If a second parameter is set, that will be the port
-  if [ $2 ]; then
-    if [[ $2 = *[[:digit:]]* ]]; then
-      port=$2
-    fi
-  else 
-    port=8000
+  # Second parameter is optional, but if set wiil be used for the port
+  if [ $2 ] && [[ $2 = *[[:digit:]]* ]]; then
+    port=$2
   fi
 
+  # Prepare the configuration file
   echo " - Creating a new configuration file"
   if [ ! -f sc_serv.conf.template ]; then
     echo " - No sc_serv.conf.template found, checking for default sc_serv.conf"
@@ -38,11 +67,15 @@ if [ $1 ]; then
       cp sc_serv.conf sc_serv.conf.template
     fi
   fi 
+
+  # Create config file based on above mentioned values
   echo " - Setting broadcast password to '$password'"
   sed -e s/^Password=.*/Password="$password"/g sc_serv.conf.template > sc_serv.conf.temp1
   echo " - Setting broadcast port to '$port'"
   sed -e s/^PortBase=.*/PortBase="$port"/g sc_serv.conf.temp1 > sc_serv.conf.tmp
   rm sc_serv.conf.temp1
+
+  # Start Shoutcast
   echo " - Starting Shoutcast server"
   echo
   ./sc_serv sc_serv.conf.tmp
