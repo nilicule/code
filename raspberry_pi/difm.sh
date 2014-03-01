@@ -31,7 +31,7 @@ echo $name
   if [ "$listenkey" == "" ]; then
     wget -nv -O $file "http://listen.di.fm/public3/$name.pls"
   else
-    wget -nv -O $file "http://listen.di.fm/premium/$name.pls?$listenkey"
+    wget -nv -O $file "http://listen.di.fm/premium_high/$name.pls?$listenkey"
   fi
   sed -n -i 's/^File[0-9]*=//p' $file
 done
