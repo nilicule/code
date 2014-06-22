@@ -186,6 +186,14 @@ function escapeFileName($filename) {
 }
 
 function readConfiguration() {
+  if (!file_exists(dirname(__FILE__)."/cache")) {
+    echo "Could not find a cache folder, creating one now.\n";
+    if (!mkdir(dirname(__FILE__)."/cache")) {
+      echo "Unable to create cache folder ".dirname(__FILE__)."/cache \n";
+      exit;
+    }
+  }
+
   if (!file_exists(dirname(__FILE__)."/divote.ini")) {
     echo "Couldn't find configuration file divote.ini in ".dirname(__FILE__).", creating one now.\n";
     $ini_template = "[general]\napi_key = \"XXXXXXXXXXXXX\"\n";
