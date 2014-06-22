@@ -7,26 +7,33 @@
  * @link       https://github.com/nilicule/code/blob/master/difm/divote.php
  */
 
+// Get commandline parameters
+$options = getopt("c:v:qh");
+
+// Parse commandline parameters
+if ((!isset($options['c']) || !isset($options['v'])) || isset($options['h'])) {
+  echo "\nUsage: ".$argv[0]." vote channel\n\n";
+  exit;
+} else {
+  // Get the parameters
+  if (isset($options['q'])) {
+    $quietmode = true;
+  } else {
+    $quietmode = false;
+  }
+
+  $vote       = strtolower($options['v']);
+  $channelkey = strtolower($options['c']);
+
+  // Make sure we either vote up or down
+  if ($vote != 'down' && $vote != 'up') {
+    echo "Vote needs to be either up or down\n";
+    exit;
+  }
+}
+
 // Read configuration
 $config = readConfiguration();
-
-# Quit unless we have the correct number of command-line args
-$num_args = $argc + 1;
-if ($num_args != 4) {
-  print "\nUsage: ".$argv[0]." vote channel\n\n";
-  exit;
-}
-
-// Command-line variables
-$vote = strtolower($argv[1]);
-$channelkey = strtolower($argv[2]);
-
-if ($vote == 'down' || $vote == 'up') {
-  // We have a vote
-} else {
-  echo "You can only vote up or down\n";
-  exit;
-}
 
 // Get channel ID
 $channel = getChannel($channelkey);
@@ -41,8 +48,10 @@ $track = getCurrentTrack($json_playlist);
 $track['votes'] = doVote($config['api_key'], $track['id'], $channel['id'], $vote);
 
 // Tell the user what we did
-$feedback = sprintf('Voting %s %s - %s (%s/%s) [votes: +%d -%d] [DI %s]', $vote, $track['artist'], $track['title'], $track['playing'], $track['length'], $track['votes']['up'], $track['votes']['down'], $channel['name']);
-echo "$feedback\n";
+if (!$quietmode) {
+  $feedback = sprintf('Voting %s %s - %s (%s/%s) [votes: +%d -%d] [DI %s]', $vote, $track['artist'], $track['title'], $track['playing'], $track['length'], $track['votes']['up'], $track['votes']['down'], $channel['name']);
+  echo "$feedback\n";
+}
 
 
 ///////////////////////////////
