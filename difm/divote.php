@@ -1,8 +1,8 @@
 #!/usr/bin/php
 <?php 
 
-// Your personal API key
-$api_key = 'XXXXXXXXXXXXXXXXXXXXXX';
+// Read configuration
+$config = readConfiguration();
 
 # Quit unless we have the correct number of command-line args
 $num_args = $argc + 1;
@@ -26,28 +26,28 @@ if ($vote == 'down' || $vote == 'up') {
 $channel = getChannel($channelkey);
 
 // Get recently played tracks
-$json_playlist = getRecentTracks();
+$json_playlist = getRecentTracks($channel['id']);
 
 // Get latest track
 $track = getCurrentTrack($json_playlist);
 
 // Do the vote
-$track['votes'] = doVote($api_key, $track['id'], $vote);
+$track['votes'] = doVote($config['api_key'], $track['id'], $channel['id'], $vote);
 
 // Tell the user what we did
 // Voting UP Star Driver & Kodex Feat. El Poco Maro - Tokyo Sunrise (4:39) [votes: +5 -4]
 
-$feedback = sprintf('Voting %s %s - %s (%s) [votes: +%d -%d] [DI %s]', $vote, $track['artist'], $track['title'], $track['length'], $track['votes']['up'], $track['votes']['down'], $channel['name']);
+$feedback = sprintf('Voting %s %s - %s (%s/%s) [votes: +%d -%d] [DI %s]', $vote, $track['artist'], $track['title'], $track['playing'], $track['length'], $track['votes']['up'], $track['votes']['down'], $channel['name']);
 echo "$feedback\n";
 
 
 ///////////////////////////////
 
-function doVote($api_key, $track_id, $vote) {
+function doVote($api_key, $track_id, $channel_id, $vote) {
   $time = time();
   $callback = 'jQuery'.$time.$time;
 
-  $difm_url_vote = "http://api.audioaddict.com/v1/di/tracks/$track_id/vote/60/$vote.jsonp?api_key=$api_key&_=$time&_method=POST&callback=$callback";
+  $difm_url_vote = "http://api.audioaddict.com/v1/di/tracks/$track_id/vote/$channel_id/$vote.jsonp?api_key=$api_key&_=$time&_method=POST&callback=$callback";
   $result = file_get_contents($difm_url_vote);
 
   // Get the new votes
@@ -109,6 +109,7 @@ function getCurrentTrack($json_playlist) {
       $track['title']     = $json['title'];
       $track['duration']  = $json['duration'];
       $track['length']    = convertDuration($track['duration']);
+      $track['playing']   = convertDuration(time() - $json['started']);
       break;
     }
   }
@@ -116,10 +117,10 @@ function getCurrentTrack($json_playlist) {
   return $track;
 }
 
-function getRecentTracks() {
+function getRecentTracks($channel_id) {
   $time = time();
   // Fetch the current track ID
-  $difm_url_history = "http://api.audioaddict.com/v1/di/track_history/channel/60.jsonp?callback=_AudioAddict_TrackHistory_WP&_=$time";
+  $difm_url_history = "http://api.audioaddict.com/v1/di/track_history/channel/$channel_id.jsonp?callback=_AudioAddict_TrackHistory_WP&_=$time";
   $result = file_get_contents($difm_url_history);
   $json_playlist = json_decode(substr(substr($result,29), 0, -2), true);
 
@@ -182,4 +183,17 @@ function SetCache($request, $staticContent) {
 
 function escapeFileName($filename) {
   return preg_replace('/[^A-Za-z0-9_\-]/', '_', $filename);
+}
+
+function readConfiguration() {
+  if (!file_exists(dirname(__FILE__)."/divote.ini")) {
+    echo "Couldn't find configuration file divote.ini in ".dirname(__FILE__).", creating one now.\n";
+    $ini_template = "[general]\napi_key = \"XXXXXXXXXXXXX\"\n";
+    file_put_contents(dirname(__FILE__)."/divote.ini", $ini_template);
+    exit;
+  }
+
+  $ini_array = parse_ini_file("divote.ini");
+
+  return $ini_array;
 }
