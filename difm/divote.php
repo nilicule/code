@@ -13,7 +13,7 @@ $config = readConfiguration();
 # Quit unless we have the correct number of command-line args
 $num_args = $argc + 1;
 if ($num_args != 4) {
-  print "\nUsage: ".$argv[0]." vote channel\n";
+  print "\nUsage: ".$argv[0]." vote channel\n\n";
   exit;
 }
 
@@ -41,8 +41,6 @@ $track = getCurrentTrack($json_playlist);
 $track['votes'] = doVote($config['api_key'], $track['id'], $channel['id'], $vote);
 
 // Tell the user what we did
-// Voting UP Star Driver & Kodex Feat. El Poco Maro - Tokyo Sunrise (4:39) [votes: +5 -4]
-
 $feedback = sprintf('Voting %s %s - %s (%s/%s) [votes: +%d -%d] [DI %s]', $vote, $track['artist'], $track['title'], $track['playing'], $track['length'], $track['votes']['up'], $track['votes']['down'], $channel['name']);
 echo "$feedback\n";
 
@@ -202,12 +200,98 @@ function readConfiguration() {
 
   if (!file_exists(dirname(__FILE__)."/divote.ini")) {
     echo "Couldn't find configuration file divote.ini in ".dirname(__FILE__).", creating one now.\n";
-    $ini_template = "[general]\napi_key = \"XXXXXXXXXXXXX\"\n";
+    $ini_template = "[general]\nusername = john@doe.net\npassword = supersecret\n";
     file_put_contents(dirname(__FILE__)."/divote.ini", $ini_template);
     exit;
   }
 
+  // Get credentials from configuration file
   $ini_array = parse_ini_file("divote.ini");
+
+  if (!isset($ini_array['api_key'])) {
+    if (isset($ini_array['username']) && isset($ini_array['password'])) {
+      // Get new API key from DI.fm
+      $ini_array['api_key'] = getApikeys($ini_array['username'], $ini_array['password']);  
+
+      // Write the API key to the configuration file
+      $config_file = array (
+        'general' => array (
+          'username' => $ini_array['username'],
+          'password' => $ini_array['password'],
+          'api_key'  => $ini_array['api_key'],
+        )
+      );
+
+      writeINI(dirname(__FILE__)."/divote.ini", $config_file);
+    } else {
+      echo "Couldn't find a username and password in ".dirname(__FILE__)."/divote.ini\n";
+      exit;
+    }
+  }
 
   return $ini_array;
 }
+
+function getApiKeys($username, $password) {
+  $data = array("username" => "$username", "password" => "$password");
+  $data_string = json_encode($data);
+
+  $ch = curl_init('https://api.audioaddict.com/v1/di/members/authenticate');
+  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $data_string);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+    'Content-Type: application/json',
+    'Content-Length: ' . strlen($data_string))
+  );
+
+  curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+
+  //execute post
+  $result = curl_exec($ch);
+
+  //close connection
+  curl_close($ch);
+
+  $auth_array_raw = json_decode($result, true);
+
+  $api_key = $auth_array_raw['api_key'];
+
+  if (!strlen($api_key)) {
+    echo "No API key received from Digitally Imported, exiting.\n";
+    exit;
+  }
+
+  return $api_key;
+}
+
+function writeINI($file, $array, $i = 0) {
+  $str="";
+  foreach ($array as $k => $v) {
+    if (is_array($v)) {
+      $str.=str_repeat(" ",$i*2)."[$k]".PHP_EOL;
+      $str.= writeINI("",$v, $i+1);
+    } else {
+      $str.=str_repeat(" ",$i*2)."$k = $v".PHP_EOL;
+    }
+  }
+
+  if($file) {
+    // Create backup file
+    $backup_file = $file . ".bak";
+
+    try {
+      copy($file, $backup_file);
+    } catch (Exception $e) {
+      // Unable to copy file
+      echo "Unable to copy configuration file\n";
+      exit;
+    }
+
+    return file_put_contents($file,$str);
+  } else {
+    return $str;
+  }
+}
+
