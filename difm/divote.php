@@ -1,5 +1,11 @@
 #!/usr/bin/php
 <?php 
+/**
+ * divote.php - a voting script for Digitally Imported
+ *
+ * @author     Remco Brink <remco@rc6.org>
+ * @link       https://github.com/nilicule/code/blob/master/difm/divote.php
+ */
 
 // Read configuration
 $config = readConfiguration();
