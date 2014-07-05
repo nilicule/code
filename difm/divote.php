@@ -83,7 +83,7 @@ function getChannel($channelkey) {
     $responsecode_string = $http_response_header[0];
     $responsecode = explode(" ", $responsecode_string);
 
-    if($responsecode[1] != "200") {
+    if ($responsecode[1] != "200") {
       echo "Unable to fetch channel list\n";
       exit;
     }
@@ -286,7 +286,7 @@ function writeINI($file, $array, $i = 0) {
     }
   }
 
-  if($file) {
+  if ($file) {
     // Create backup file
     $backup_file = $file . ".bak";
 
