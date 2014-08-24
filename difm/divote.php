@@ -94,7 +94,7 @@ function getChannel($channelkey) {
   $channel_result = array();
   $request = 'difm.channels';
 
-  if (CheckCache($request)) {
+  if (checkCache($request)) {
     $channels_json = getCachedFile($request);
   } else {
     $channels_json = file_get_contents('http://listen.di.fm/streamlist');
@@ -109,7 +109,7 @@ function getChannel($channelkey) {
     }
 
     // Store file in cache
-    SetCache($request, $channels_json);
+    setCache($request, $channels_json);
   }
 
   // Decode JSON
@@ -195,7 +195,7 @@ function convertDuration($sec, $padHours = false) {
   return $hms;
 }
 
-function CheckCache($request) {
+function checkCache($request) {
   if (file_exists(dirname(__FILE__)."/cache/" . escapeFileName($request))) {
     if ((time()-filemtime(dirname(__FILE__)."/cache/" . escapeFileName($request)) > 12 * 3600) != true) {
       return true;
@@ -209,7 +209,7 @@ function getCachedFile($request) {
   return file_get_contents(dirname(__FILE__)."/cache/" . escapeFileName($request));
 }
 
-function SetCache($request, $staticContent) {
+function setCache($request, $staticContent) {
   $update = (array)json_decode($staticContent, true);
   file_put_contents(dirname(__FILE__)."/cache/" . escapeFileName($request), json_encode($update));
 }
