@@ -8,11 +8,15 @@
  */
 
 // Get commandline parameters
-$options = getopt("c:v:qh");
+$options = getopt("c:v:sqh");
 
 // Parse commandline parameters
-if ((!isset($options['c']) || !isset($options['v'])) || isset($options['h'])) {
-  echo "\nUsage: ".$argv[0]." vote channel\n\n";
+if (!isset($options['c']) || (!isset($options['v']) && !isset($options['s'])) || isset($options['h'])) {
+  echo "\nUsage:\n\n";
+  echo "  To vote for a channel:\n";
+  echo "     ".$argv[0]." -c <channel> -v <up/down>\n";
+  echo "\n  To show the currently playing track for a channel:\n";
+  echo "     ".$argv[0]." -c <channel> -s\n\n";
   exit;
 } else {
   // Get the parameters
@@ -22,14 +26,25 @@ if ((!isset($options['c']) || !isset($options['v'])) || isset($options['h'])) {
     $quietmode = false;
   }
 
-  $vote       = strtolower($options['v']);
-  $channelkey = strtolower($options['c']);
+  if (isset($options['s'])) {
+    // Just show what's playing now
+    $show = true;
+  } else {
+    // We're voting
+    $show = false;
 
-  // Make sure we either vote up or down
-  if ($vote != 'down' && $vote != 'up') {
-    echo "Vote needs to be either up or down\n";
-    exit;
+    // We're going to actually vote
+    $vote       = strtolower($options['v']);
+
+    // Make sure we either vote up or down
+    if ($vote != 'down' && $vote != 'up') {
+      echo "Vote needs to be either up or down\n";
+      exit;
+    }
   }
+
+  // The channel
+  $channelkey = strtolower($options['c']);
 }
 
 // Read configuration
@@ -43,6 +58,11 @@ $json_playlist = getRecentTracks($channel['id']);
 
 // Get latest track
 $track = getCurrentTrack($json_playlist);
+if ($show) {
+  $feedback = sprintf('np: %s - %s (%s/%s) [DI %s]', $track['artist'], $track['title'], $track['playing'], $track['length'], $channel['name']);
+  echo "$feedback\n";
+  exit;
+}
 
 // Do the vote
 $track['votes'] = doVote($config['api_key'], $track['id'], $channel['id'], $vote);
@@ -74,7 +94,7 @@ function getChannel($channelkey) {
   $channel_result = array();
   $request = 'difm.channels';
 
-  if (checkCache($request)) {
+  if (CheckCache($request)) {
     $channels_json = getCachedFile($request);
   } else {
     $channels_json = file_get_contents('http://listen.di.fm/streamlist');
@@ -83,13 +103,13 @@ function getChannel($channelkey) {
     $responsecode_string = $http_response_header[0];
     $responsecode = explode(" ", $responsecode_string);
 
-    if ($responsecode[1] != "200") {
+    if($responsecode[1] != "200") {
       echo "Unable to fetch channel list\n";
       exit;
     }
 
     // Store file in cache
-    setCache($request, $channels_json);
+    SetCache($request, $channels_json);
   }
 
   // Decode JSON
@@ -175,7 +195,7 @@ function convertDuration($sec, $padHours = false) {
   return $hms;
 }
 
-function checkCache($request) {
+function CheckCache($request) {
   if (file_exists(dirname(__FILE__)."/cache/" . escapeFileName($request))) {
     if ((time()-filemtime(dirname(__FILE__)."/cache/" . escapeFileName($request)) > 12 * 3600) != true) {
       return true;
@@ -189,7 +209,7 @@ function getCachedFile($request) {
   return file_get_contents(dirname(__FILE__)."/cache/" . escapeFileName($request));
 }
 
-function setCache($request, $staticContent) {
+function SetCache($request, $staticContent) {
   $update = (array)json_decode($staticContent, true);
   file_put_contents(dirname(__FILE__)."/cache/" . escapeFileName($request), json_encode($update));
 }
@@ -286,7 +306,7 @@ function writeINI($file, $array, $i = 0) {
     }
   }
 
-  if ($file) {
+  if($file) {
     // Create backup file
     $backup_file = $file . ".bak";
 
